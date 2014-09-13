@@ -48,7 +48,7 @@
                         </select>
                     </li>
                     <?php
-                    $fields = array(array("label" => "Nominal Volume", "name" => "nominalVolume"), array("label" => "Evaporation Loss", "name" => "nominalVolume"));
+                    $fields = array(array("label" => "Nominal Volume", "name" => "nominalVolume"), array("label" => "Evaporation Loss", "name" => "evaporationLoss"));
                     $measures = 10;
                     ?>
                     <?php
@@ -68,7 +68,7 @@
                                    $x < $measures;
                                    $x++): ?>
                             <li><label>Measure #<?php echo $x; ?>: </label><input type="text"
-                                                                                  name="evaporationLoss[<?php echo $x; ?>]"/>
+                                                                                  name="mass[<?php echo $x; ?>]"/>
                             </li>
                         <?php endfor; ?>
                     </ul>
@@ -128,18 +128,26 @@
     );
 
     $conversionRate = $conversionRates[$_REQUEST["temperature"]][$_REQUEST["airPressure"]];
-    var_dump($_REQUEST["evaporationLoss"]);
-    var_dump(count($_REQUEST["evaporationLoss"]));
-    var_dump(array_sum($_REQUEST["evaporationLoss"]));
-    $meanVolume = array_sum($_REQUEST["evaporationLoss"]) / count($_REQUEST["evaporationLoss"]);
+    for($i=0; $i < count($_REQUEST["mass"]); $i++) {
+        if(isset($currentMass)) {
+            $volumes[] =(($_REQUEST["mass"][$i] - $currentMass) + $_REQUEST["evaporationLoss"]) * $conversionRate;
+        }
+        else {
+            $currentMass = $_REQUEST["mass"][$i];
+        }
+    }
+
+    $meanVolume = array_sum($volumes) / count($volumes);
+
+    var_dump($volumes);
     $accuracy = $meanVolume - $_REQUEST["nominalVolume"];
-    $relativeAccuracy = 100 * ($accuracy / $_REQUEST["nominalVolume"]);
+    // $relativeAccuracy = 100 * ($accuracy / $_REQUEST["nominalVolume"]);
     ?>
     <ul>
         <li><label>Conversion Rate: </label><?php echo $conversionRate; ?></li>
         <li><label>Mean Volume /uL</label><?php echo $meanVolume; ?></li>
         <li><label>Accuracy /uL</label><?php echo $accuracy; ?></li>
-        <li><label>Relative Accuracy %</label><?php echo $relativeAccuracy; ?></li>
+        <!-- <li><label>Relative Accuracy %</label><?php echo $relativeAccuracy; ?></li> -->
         <li><label>Standard Deviation /uL</label></li>
         <li><label>Coefficient of Variation %</label></li>
     </ul>
