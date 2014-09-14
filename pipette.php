@@ -93,6 +93,10 @@
     </html>
 <?php else: ?>
     <?php
+
+    $nominalVolume = $_REQUEST["nominalVolume"];
+    $evaporationLoss = $_REQUEST["evaporationLoss"];
+
     $conversionRates = array("15" => array("80" => 1.0017, "85" => 1.0018, "90" => 1.0019, "95" => 1.0019, "100" => 1.0020, "101" => 1.0020, "105" => 1.0020
     ), "15.5" => array("80" => 1.0018, "85" => 1.0019, "90" => 1.0019, "95" => 1.0020, "100" => 1.0020, "101" => 1.0020, "105" => 1.0021
     ), "16" => array("80" => 1.0019, "85" => 1.0020, "90" => 1.0020, "95" => 1.0021, "100" => 1.0021, "101" => 1.0021, "105" => 1.0022
@@ -128,21 +132,30 @@
     );
 
     $conversionRate = $conversionRates[$_REQUEST["temperature"]][$_REQUEST["airPressure"]];
-    for($i=0; $i < count($_REQUEST["mass"]); $i++) {
-        if(isset($currentMass)) {
-            $volumes[] =(($_REQUEST["mass"][$i] - $currentMass) + $_REQUEST["evaporationLoss"]) * $conversionRate;
-        }
-        else {
+
+    for ($i = 0; $i < count($_REQUEST["mass"]); $i++) {
+        if (!isset($currentMass)) {
+            $weights[] = ($_REQUEST["mass"][$i]) * 1000;
+            $currentMass = $_REQUEST["mass"][$i];
+        } else {
+            $weights[] = ($_REQUEST["mass"][$i] - $currentMass) * 1000;
             $currentMass = $_REQUEST["mass"][$i];
         }
+    }
+    foreach ($weights as $weight) {
+        $volumes[] = ($weight + $_REQUEST["evaporationLoss"]) * $conversionRate;
     }
 
     $meanVolume = array_sum($volumes) / count($volumes);
 
-    var_dump($volumes);
     $accuracy = $meanVolume - $_REQUEST["nominalVolume"];
     // $relativeAccuracy = 100 * ($accuracy / $_REQUEST["nominalVolume"]);
     ?>
+    Weights:
+    <?php var_dump($weights); ?>
+    Volumes:
+    <?php var_dump($volumes); ?>
+
     <ul>
         <li><label>Conversion Rate: </label><?php echo $conversionRate; ?></li>
         <li><label>Mean Volume /uL</label><?php echo $meanVolume; ?></li>
