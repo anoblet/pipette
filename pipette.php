@@ -1,3 +1,43 @@
+<?php
+
+error_reporting(0);
+
+if (!function_exists('stats_standard_deviation')) {
+    /**
+     * This user-land implementation follows the implementation quite strictly;
+     * it does not attempt to improve the code or algorithm in any way. It will
+     * raise a warning if you have fewer than 2 values in your array, just like
+     * the extension does (although as an E_USER_WARNING, not E_WARNING).
+     *
+     * @param array $a
+     * @param bool $sample [optional] Defaults to false
+     * @return float|bool The standard deviation or false on error.
+     */
+    function stats_standard_deviation(array $a, $sample = false)
+    {
+        $n = count($a);
+        if ($n === 0) {
+            trigger_error("The array has zero elements", E_USER_WARNING);
+            return false;
+        }
+        if ($sample && $n === 1) {
+            trigger_error("The array has only 1 element", E_USER_WARNING);
+            return false;
+        }
+        $mean = array_sum($a) / $n;
+        $carry = 0.0;
+        foreach ($a as $val) {
+            $d = ((double)$val) - $mean;
+            $carry += $d * $d;
+        };
+        if ($sample) {
+            --$n;
+        }
+        return sqrt($carry / $n);
+    }
+}
+?>
+
 <?php if (!isset($_REQUEST['ajax'])): ?>
     <html>
     <head>
@@ -149,7 +189,10 @@
     $meanVolume = array_sum($volumes) / count($volumes);
 
     $accuracy = $meanVolume - $_REQUEST["nominalVolume"];
-    // $relativeAccuracy = 100 * ($accuracy / $_REQUEST["nominalVolume"]);
+    $relativeAccuracy = 100 * ($accuracy / $_REQUEST["nominalVolume"]);
+    $standardDeviation = stats_standard_deviation($volumes);
+    $coefficientOfVariation = 100 * ($standardDeviation / $meanVolume);
+
     ?>
     Weights:
     <?php var_dump($weights); ?>
@@ -160,8 +203,8 @@
         <li><label>Conversion Rate: </label><?php echo $conversionRate; ?></li>
         <li><label>Mean Volume /uL</label><?php echo $meanVolume; ?></li>
         <li><label>Accuracy /uL</label><?php echo $accuracy; ?></li>
-        <!-- <li><label>Relative Accuracy %</label><?php echo $relativeAccuracy; ?></li> -->
-        <li><label>Standard Deviation /uL</label></li>
-        <li><label>Coefficient of Variation %</label></li>
+        <li><label>Relative Accuracy %</label><?php echo $relativeAccuracy; ?></li>
+        <li><label>Standard Deviation /uL</label><?php echo $standardDeviation; ?></li>
+        <li><label>Coefficient of Variation %</label><?php echo $coefficientOfVariation; ?></li>
     </ul>
 <?php endif; ?>
